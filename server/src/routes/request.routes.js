@@ -11,9 +11,11 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/', getRequests);
-router.get('/:id', getRequest);
+router.get('/my', getRequests);                                           // alias — getRequests filters by role
 router.post('/', authorize('receiver'), requireVerified, createRequest);
 router.patch('/:id/cancel', authorize('receiver'), cancelRequest);
 router.patch('/:id/confirm-delivery', authorize('donor', 'receiver'), confirmDelivery);
+router.get('/:id', getRequest);                                           // MUST be after /my
 
 export default router;
+

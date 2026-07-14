@@ -34,10 +34,25 @@ import { AppError } from './src/utils/appError.js';
 const app = express();
 const httpServer = createServer(app);
 
+// ─── CORS Origin Helper ───────────────────────────────────────────────
+// In development allow any localhost port (Vite can bind to 5173/5174/5175…)
+// In production only allow the explicit CLIENT_URL env variable.
+const corsOrigin = (origin, callback) => {
+  if (process.env.NODE_ENV !== 'production') {
+    // Allow requests with no origin (curl, Postman) and any localhost port
+    if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) {
+      return callback(null, true);
+    }
+  }
+  const allowed = process.env.CLIENT_URL || 'http://localhost:5173';
+  if (origin === allowed) return callback(null, true);
+  callback(new Error(`CORS: origin ${origin} not allowed`));
+};
+
 // ─── Socket.IO Setup ─────────────────────────────────────────────────
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: corsOrigin,
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -54,7 +69,7 @@ app.use(
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: corsOrigin,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -77,7 +92,7 @@ app.use('/api', limiter);
 // Auth-specific stricter rate limiter
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: process.env.NODE_ENV === 'production' ? 10 : 50,
   message: { success: false, message: 'Too many authentication attempts. Try again in 15 minutes.' },
 });
 app.use('/api/auth/login', authLimiter);
@@ -126,7 +141,7 @@ app.all('*', (req, res, next) => {
 app.use(errorMiddleware);
 
 // ─── Start Server ────────────────────────────────────────────────────
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5005;
 
 const start = async () => {
   await connectDB();

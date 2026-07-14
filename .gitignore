@@ -37,3 +37,9 @@ Thumbs.db
 .eslintcache
 .nyc_output
 coverage/
+
+# Uploads (if you store any locally before Cloudinary push)
+uploads/
+tmp/
+
+

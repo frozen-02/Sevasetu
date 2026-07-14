@@ -57,12 +57,21 @@ export const getDashboardOverview = catchAsync(async (req, res) => {
   res.status(200).json({
     success: true,
     stats: {
+      // flat keys — used by Dashboard page stat cards
+      totalUsers: totalUsers,
+      totalDonations: totalDonations,
+      pendingDonations: pendingDonations,
+      approvedDonations: approvedDonations,
+      totalRequests: totalRequests,
+      successfulMatches: deliveredMatches,
+      deliveredItems: deliveredDonations,
+      successRate,
+      // nested breakdown — used by other consumers
       users: { total: totalUsers, active: activeUsers, donors: totalDonors, receivers: totalReceivers },
       donations: { total: totalDonations, pending: pendingDonations, approved: approvedDonations, delivered: deliveredDonations },
       requests: { total: totalRequests, pending: pendingRequests },
       matches: { total: totalMatches, delivered: deliveredMatches },
       feedback: { total: totalFeedback },
-      successRate,
     },
     recentUsers,
     recentDonations,

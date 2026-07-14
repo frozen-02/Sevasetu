@@ -206,3 +206,32 @@ export const hideFeedback = catchAsync(async (req, res, next) => {
 
   res.status(200).json({ success: true, message: 'Feedback hidden.' });
 });
+
+// ─── UPDATE FEEDBACK (receiver / donor can edit their own) ────────────
+
+export const updateFeedback = catchAsync(async (req, res, next) => {
+  const { rating, comment } = req.body;
+
+  const feedback = await Feedback.findById(req.params.id);
+  if (!feedback) return next(new AppError('Feedback not found.', 404));
+
+  if (feedback.from.toString() !== req.user._id.toString()) {
+    return next(new AppError('You can only edit your own feedback.', 403));
+  }
+
+  if (rating !== undefined) feedback.rating = parseInt(rating);
+  if (comment !== undefined) {
+    const sentiment = analyzeSentiment(comment);
+    const toxicity = detectToxicity(comment);
+    feedback.comment = comment;
+    feedback.sentimentScore = sentiment.score;
+    feedback.sentimentLabel = sentiment.label;
+    feedback.isToxic = toxicity.isToxic;
+    feedback.toxicityScore = toxicity.score;
+    feedback.isHidden = toxicity.isToxic;
+  }
+
+  await feedback.save();
+
+  res.status(200).json({ success: true, message: 'Feedback updated.', feedback });
+});

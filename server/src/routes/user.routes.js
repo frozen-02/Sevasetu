@@ -12,9 +12,9 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/', authorize('admin'), getAllUsers);
+router.post('/change-password', changePassword);  // must be before /:id
 router.get('/:id', getUser);
 router.put('/:id', uploadAvatar, handleMulterError, updateProfile);
-router.post('/change-password', changePassword);
 router.patch('/:id/status', authorize('admin'), toggleUserStatus);
 router.delete('/:id', authorize('admin'), deleteUser);
 

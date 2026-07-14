@@ -18,6 +18,9 @@ export const authorize = (...roles) => {
 };
 
 export const requireVerified = (req, res, next) => {
+  // In development, skip verification gate so the app works without email setup
+  if (process.env.NODE_ENV !== 'production') return next();
+
   if (!req.user.isVerified) {
     return next(
       new AppError(

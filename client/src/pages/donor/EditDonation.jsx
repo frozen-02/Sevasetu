@@ -21,7 +21,7 @@ const schema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(100),
   category: z.string().min(1, 'Please select a category'),
   subcategory: z.string().optional(),
-  description: z.string().min(10, 'Description must be at least 10 characters').max(1000),
+  description: z.string().min(20, 'Description must be at least 20 characters').max(1000),
   quantityValue: z.coerce.number().min(1, 'Quantity must be at least 1'),
   quantityUnit: z.string().min(1, 'Please enter a unit'),
   condition: z.string().min(1, 'Please select a condition'),
@@ -194,17 +194,17 @@ export default function EditDonation() {
 
   const onSubmit = async (values) => {
     const formData = new FormData();
-    formData.append('title', values.title);
-    formData.append('category', values.category);
+    formData.append('title',          values.title);
+    formData.append('category',       values.category);
     if (values.subcategory) formData.append('subcategory', values.subcategory);
-    formData.append('description', values.description);
-    formData.append('quantity[value]', values.quantityValue);
-    formData.append('quantity[unit]', values.quantityUnit);
-    formData.append('condition', values.condition);
-    formData.append('location[city]', values.locationCity);
-    formData.append('location[state]', values.locationState);
-    if (values.locationPincode) formData.append('location[pincode]', values.locationPincode);
-    formData.append('pickupAvailable', values.pickupAvailable);
+    formData.append('description',    values.description);
+    formData.append('quantityValue',  values.quantityValue);
+    formData.append('quantityUnit',   values.quantityUnit);
+    formData.append('condition',      values.condition);
+    formData.append('locationCity',   values.locationCity);
+    formData.append('locationState',  values.locationState);
+    if (values.locationPincode) formData.append('locationPincode', values.locationPincode);
+    formData.append('pickupAvailable', String(values.pickupAvailable));
     if (values.expiryDate) formData.append('expiryDate', values.expiryDate);
 
     if (values.tags) {
@@ -219,6 +219,7 @@ export default function EditDonation() {
 
     mutation.mutate(formData);
   };
+
 
   if (isLoading) return <EditSkeleton />;
 

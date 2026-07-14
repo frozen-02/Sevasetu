@@ -50,6 +50,13 @@ export const register = catchAsync(async (req, res, next) => {
   // Create user
   const user = await User.create({ name, email, password, role, phone });
 
+  // In development, auto-verify users so they can login immediately
+  // without configuring a real email service.
+  if (process.env.NODE_ENV !== 'production') {
+    user.isVerified = true;
+    await user.save({ validateBeforeSave: false });
+  }
+
   // Create role profile
   if (role === 'donor') {
     await DonorProfile.create({ user: user._id });
@@ -64,15 +71,18 @@ export const register = catchAsync(async (req, res, next) => {
   const verificationToken = user.createEmailVerificationToken();
   await user.save({ validateBeforeSave: false });
 
-  // Send verification email
+  // Send verification email (in dev with no SMTP, this just prints to console)
   try {
     await sendVerificationEmail(user, verificationToken);
   } catch (err) {
-    // Reset token if email fails
-    user.emailVerificationToken = undefined;
-    user.emailVerificationExpires = undefined;
-    await user.save({ validateBeforeSave: false });
-    return next(new AppError('Failed to send verification email. Please try again.', 500));
+    // In production, roll back if email fails. In dev, continue anyway.
+    if (process.env.NODE_ENV === 'production') {
+      user.emailVerificationToken = undefined;
+      user.emailVerificationExpires = undefined;
+      await user.save({ validateBeforeSave: false });
+      return next(new AppError('Failed to send verification email. Please try again.', 500));
+    }
+    console.warn('⚠️  Dev: email send skipped (no SMTP configured)');
   }
 
   await logAudit({
@@ -85,7 +95,9 @@ export const register = catchAsync(async (req, res, next) => {
 
   res.status(201).json({
     success: true,
-    message: 'Account created successfully. Please check your email to verify your account.',
+    message: process.env.NODE_ENV !== 'production'
+      ? 'Account created! You can login immediately (dev mode: email auto-verified).'
+      : 'Account created successfully. Please check your email to verify your account.',
     userId: user._id,
   });
 });

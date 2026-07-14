@@ -62,6 +62,7 @@ export const feedbackService = {
   getAll: (params) => api.get('/feedback', { params }),
   getMy: (params) => api.get('/feedback/my', { params }),
   create: (data) => api.post('/feedback', data),
+  update: (id, data) => api.patch(`/feedback/${id}`, data),
   hide: (id, reason) => api.patch(`/feedback/${id}/hide`, { reason }),
 };
 

@@ -1,10 +1,40 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { AppError } from '../utils/appError.js';
 
+const isDev = process.env.NODE_ENV !== 'production';
+
+// Check if Cloudinary is properly configured
+const isCloudinaryConfigured = () => {
+  const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } = process.env;
+  return (
+    CLOUDINARY_CLOUD_NAME &&
+    CLOUDINARY_API_KEY &&
+    CLOUDINARY_API_SECRET &&
+    CLOUDINARY_API_SECRET.length >= 20  // real secrets are 27 chars
+  );
+};
+
 /**
- * Upload a buffer to Cloudinary
+ * Upload a buffer to Cloudinary.
+ * In development without valid credentials, returns a placeholder image instead of crashing.
  */
 export const uploadBufferToCloudinary = (buffer, folder, options = {}) => {
+  // Dev-mode fallback — skip real upload when Cloudinary isn't configured
+  if (!isCloudinaryConfigured()) {
+    if (isDev) {
+      console.warn('⚠️  Cloudinary not configured — using placeholder image for dev');
+      return Promise.resolve({
+        url: `https://placehold.co/600x400/1e1e2e/a78bfa?text=Image+${Date.now()}`,
+        publicId: `dev_placeholder_${Date.now()}`,
+        width: 600,
+        height: 400,
+        format: 'png',
+        size: 0,
+      });
+    }
+    throw new AppError('Image upload is not configured. Please contact support.', 503);
+  }
+
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
@@ -45,6 +75,7 @@ export const uploadMultipleToCloudinary = async (files, folder) => {
  * Delete from Cloudinary by public ID
  */
 export const deleteFromCloudinary = async (publicId) => {
+  if (!isCloudinaryConfigured() || publicId?.startsWith('dev_placeholder')) return;
   try {
     await cloudinary.uploader.destroy(publicId);
   } catch (error) {
